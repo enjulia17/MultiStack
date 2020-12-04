@@ -7,7 +7,7 @@
 
 int main() 
 {
-	TMultiStack<int> A(9, 3);
+	TMultiStack<int> A(3, 3);
 	A.Push(3, 0);
 	A.Push(2, 1);
 	A.Push(-1, 0);

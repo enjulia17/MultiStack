@@ -24,6 +24,24 @@ public:
 	T Pop();
 	void SetData(T* _x, int size, int top_);
 
+	void resize(int s)
+	{
+		T* newArr = new T[s];
+
+		int temp = 0;
+		if (s > length)
+			temp = length;
+		else
+			temp = s;
+
+		for (int i = 0; i < temp; i++)
+			newArr[i] = data[i];
+
+		length = s;
+		delete[] data;
+		data = newArr;
+	}
+
 	bool IsEmpty(void) const;
 	bool IsFull(void) const;
 
@@ -101,7 +119,6 @@ TStack<T>::~TStack()
 		if (data != 0)
 		{
 			delete[] data;
-			data = 0;
 		}
 }
 
