@@ -47,3 +47,14 @@ TEST(multistack, multisatck_is_empty)
 	ASSERT_ANY_THROW(B.Pop(2));
 }
 
+TEST(multistack, reallocation_works)
+{
+	TMultiStack<int> A(3, 3);
+	A.Push(3, 0);
+	A.Push(2, 1);
+	A.Push(-1, 0);
+	A.Push(5, 0);
+	A.Push(6, 1);
+	ASSERT_NO_THROW(A.Push(-1, 0));
+}
+

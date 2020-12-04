@@ -1,5 +1,4 @@
-#ifndef _Stack_
-#define _Stack_
+#pragma once
 
 #include <iostream>
 
@@ -12,7 +11,7 @@ protected:
 	int length;
 	T* data;
 	int top;
-	bool isHaveData;
+	bool dataPresent;
 public:
 	TStack(int size = 1, bool _f = true);
 	TStack(TStack<T>& _v);
@@ -23,6 +22,24 @@ public:
 	void Push(T d);
 	T Pop();
 	void SetData(T* _x, int size, int top_);
+
+	void resize(int s)
+	{
+		T* newArr = new T[s];
+
+		int temp = 0;
+		if (s > length)
+			temp = length;
+		else
+			temp = s;
+
+		for (int i = 0; i < temp; i++)
+			newArr[i] = data[i];
+
+		length = s;
+		delete[] data;
+		data = newArr;
+	}
 
 	bool IsEmpty(void) const;
 	bool IsFull(void) const;
@@ -63,8 +80,8 @@ inline TStack<T>::TStack(int size, bool _f)
 	if (size > 0)
 	{
 		this->length = size;
-		this->isHaveData = _f;
-		if (isHaveData)
+		this->dataPresent = _f;
+		if (dataPresent)
 		{
 			data = new T[length];
 			for (int i = 0; i < length; i++)
@@ -81,8 +98,8 @@ TStack<T>::TStack(TStack<T>& _v)
 {
 	length = _v.length;
 	top = _v.top;
-	isHaveData = _v.isHaveData;
-	if (isHaveData)
+	dataPresent = _v.dataPresent;
+	if (dataPresent)
 	{
 		data = new T[length];
 		for (int i = 0; i < length; i = i + 1)
@@ -97,11 +114,11 @@ template <class T>
 TStack<T>::~TStack()
 {
 	length = 0;
-	if (isHaveData)
+	if (dataPresent)
 		if (data != 0)
 		{
 			delete[] data;
-			data = 0;
+			//data = 0;
 		}
 }
 
@@ -112,8 +129,8 @@ TStack<T>& TStack<T>::operator =(TStack<T>& _v)
 		return *this;
 
 	length = _v.length;
-	isHaveData = _v.isHaveData;
-	if (isHaveData)
+	dataPresent = _v.dataPresent;
+	if (dataPresent)
 	{
 		delete[] data;
 		data = new T[length];
@@ -152,11 +169,11 @@ inline T TStack<T>::Pop()
 template<class T>
 inline void TStack<T>::SetData(T* _x, int size, int top_)
 {
-	if (isHaveData)
+	if (dataPresent)
 		delete[] data;
 
 	length = size;
-	isHaveData = false;
+	dataPresent = false;
 	data = _x;
 	top = top_;
 
@@ -185,9 +202,6 @@ inline int TStack<T>::GetCount()
 {
 	return top;
 }
-
-
-#endif
 
 
 
