@@ -12,7 +12,7 @@ protected:
 	int length;
 	T* data;
 	int top;
-	bool isHaveData;
+	bool hasData;
 public:
 	TStack(int size = 1, bool _f = true);
 	TStack(TStack<T>& _v);
@@ -23,24 +23,6 @@ public:
 	void Push(T d);
 	T Pop();
 	void SetData(T* _x, int size, int top_);
-
-	void resize(int s)
-	{
-		T* newArr = new T[s];
-
-		int temp = 0;
-		if (s > length)
-			temp = length;
-		else
-			temp = s;
-
-		for (int i = 0; i < temp; i++)
-			newArr[i] = data[i];
-
-		length = s;
-		delete[] data;
-		data = newArr;
-	}
 
 	bool IsEmpty(void) const;
 	bool IsFull(void) const;
@@ -57,7 +39,7 @@ public:
 template <class T1>
 ostream& operator<< (ostream& ostr, const TStack<T1> &A) {
 	for (int i = 0; i < A.top; i++) {
-		ostr << A.data[i] << endl;
+		ostr << A.data[i] << " ";
 	}
 	return ostr;
 }
@@ -81,8 +63,8 @@ inline TStack<T>::TStack(int size, bool _f)
 	if (size > 0)
 	{
 		this->length = size;
-		this->isHaveData = _f;
-		if (isHaveData)
+		this->hasData = _f;
+		if (hasData)
 		{
 			data = new T[length];
 			for (int i = 0; i < length; i++)
@@ -99,26 +81,25 @@ TStack<T>::TStack(TStack<T>& _v)
 {
 	length = _v.length;
 	top = _v.top;
-	isHaveData = _v.isHaveData;
-	if (isHaveData)
+	hasData = _v.hasData;
+	if (hasData)
 	{
 		data = new T[length];
 		for (int i = 0; i < length; i = i + 1)
 			data[i] = _v.data[i];
 	}
 	else
-	{
 		data = _v.data;
-	}
 }
 template <class T>
 TStack<T>::~TStack()
 {
 	length = 0;
-	if (isHaveData)
+	if (hasData)
 		if (data != 0)
 		{
 			delete[] data;
+			data = 0;
 		}
 }
 
@@ -128,9 +109,11 @@ TStack<T>& TStack<T>::operator =(TStack<T>& _v)
 	if (this == &_v)
 		return *this;
 
+	top = _v.top;
 	length = _v.length;
-	isHaveData = _v.isHaveData;
-	if (isHaveData)
+	hasData = _v.hasData;
+
+	if (hasData)
 	{
 		delete[] data;
 		data = new T[length];
@@ -138,10 +121,8 @@ TStack<T>& TStack<T>::operator =(TStack<T>& _v)
 			data[i] = _v.data[i];
 	}
 	else
-	{
 		data = _v.data;
-	}
-	top = _v.top;
+
 	return *this;
 }
 
@@ -163,17 +144,18 @@ inline T TStack<T>::Pop()
 
 	T d = data[top - 1];
 	top--;
+
 	return d;
 }
 
 template<class T>
 inline void TStack<T>::SetData(T* _x, int size, int top_)
 {
-	if (isHaveData)
+	if (hasData)
 		delete[] data;
 
 	length = size;
-	isHaveData = false;
+	hasData = false;
 	data = _x;
 	top = top_;
 

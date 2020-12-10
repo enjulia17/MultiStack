@@ -5,34 +5,17 @@ class TMultiStack
 {
 protected:
 
-	int stackCount;
+	int count;
+	int size;
+	T* x;
 	TStack<T>* stacks;
 
-	void reallocate(int free_cells, int n)
-	{
-		int for_each = free_cells / stackCount;
-		int extra = free_cells - for_each * stackCount;
+	T** oldX;
 
-		for (int i = 0; i < stackCount; i++)
-		{
-			if (i == n)
-				stacks[i].resize(stacks[i].GetCount() + for_each + extra);
-
-			else
-				stacks[i].resize(stacks[i].GetCount() + for_each);
-		}
-	}
-
-	int get_free_cells()
-	{
-		int free_cells = 0;
-		for (int i = 0; i < stackCount; i++)
-			free_cells += stacks[i].GetSize() - stacks[i].GetCount();
-		return free_cells;
-	}
+	void StackRelocation(int index);
 
 public:
-	TMultiStack(int sizeStack = 1, int _stackCount = 1);
+	TMultiStack(int size = 1, int count = 1);
 	TMultiStack(TMultiStack<T>& _v);
 	~TMultiStack();
 
@@ -43,36 +26,131 @@ public:
 
 	bool IsEmpty(int i) const;
 	bool IsFull(int i) const;
+
+	//template<class T1>
+	friend ostream& operator<< (ostream& ostr, const TMultiStack<T>& A)
+	{
+		for (int i = 0; i < A.count; i++)
+			ostr << A.stacks[i] << endl;
+		return ostr;
+	}
 };
 
 template<class T>
-TMultiStack<T>::TMultiStack(int sizeStack, int _stackCount)
+inline void TMultiStack<T>::StackRelocation(int index)
 {
-	if (sizeStack <= 0 || _stackCount <= 0) throw logic_error("invalid size");
-	stackCount = _stackCount;
-	stacks = new TStack<T>[_stackCount];
-	for (int i = 0; i < _stackCount; i++)
-		stacks[i] = TStack<T>(sizeStack, true);
+	int freeSize = 0;
+	for (int i = 0; i < count; i++)
+		freeSize += stacks[i].GetSize() - stacks[i].GetCount();
+
+	if (freeSize == 0)
+		throw - 2;
+
+	int for_each = freeSize / count;
+	int* sizes = new int[count];
+	for (int i = 0; i < count - 1; i++)
+		sizes[i] = stacks[i].GetCount() + for_each;
+	sizes[count - 1] = stacks[count - 1].GetCount() + freeSize - for_each * (count - 1);
+
+	T** newX = new T *[count];
+	int k = 0;
+	for (int i = 0; i < count; i++)
+	{
+		newX[i] = &(x[k]);
+		k += sizes[i];
+	}
+
+	for (int i = 0; i < count; i++)
+	{
+		if (newX[i] == oldX[i])
+			stacks[i].SetData(newX[i], sizes[i], stacks[i].GetCount());
+		else if (newX[i] < oldX[i])
+		{
+			for (int j = 0; j < stacks[i].GetCount(); j++)
+				newX[i][j] = oldX[i][j];
+			stacks[i].SetData(newX[i], sizes[i], stacks[i].GetCount());
+		}
+		else if (newX[i] > oldX[i])
+		{
+			for (k = i; k < count; k++)
+				if (newX[k] > oldX[k])
+					continue;
+				else
+					break;
+			k--;
+
+			for (int s = k; s >= i; s--)
+			{
+				for (int j = stacks[s].GetCount() - 1; j >= 0; j--)
+					newX[s][j] = oldX[s][j];
+				stacks[s].SetData(newX[s], sizes[s], stacks[s].GetCount());
+			}
+		}
+
+	}
+
+	T** buffer = oldX;
+	oldX = newX;
+	delete[] buffer;
+	delete[] sizes;
+}
+
+template<class T>
+TMultiStack<T>::TMultiStack(int size, int count)
+{
+	if (size <= 0 || count <= 0)
+		throw logic_error("invalid size");
+	this->count = count;
+	this->size = size;
+
+	x = new T[size];
+	for (int i = 0; i < size; i++)
+		x[i] = 0;
+
+	int for_each = size / count;
+	int* sizes = new int[count];
+	for (int i = 0; i < count - 1; i++)
+		sizes[i] = for_each;
+	sizes[count - 1] = size - for_each * (count - 1);
+
+	oldX = new T *[count];
+
+	stacks = new TStack<T>[count];
+	int k = 0;
+	for (int i = 0; i < count; i++)
+	{
+		stacks[i].SetData(&(x[k]), sizes[i], 0);
+		oldX[i] = &(x[k]);
+		k += sizes[i];
+	}
 }
 
 template <class T>
 TMultiStack<T>::TMultiStack(TMultiStack<T>& _v)
 {
-	stacks = new TStack<T>[_v.stackCount];
-	stackCount = _v.stackCount;
-	for (int i = 0; i <_v.stackCount; i++) {
+	size = _v.size;
+	count = _v.count;
 
-		stacks[i] = TStack<T>(1, false);
+	x = new T[size];
+	for (int i = 0; i < size; i++)
+		x[i] = _v.x[i];
+
+	stacks = new TStack<T>[count];
+
+	for (int i = 0; i < count; i++)
 		stacks[i] = _v.stacks[i];
-	}
 }
 
 template<class T>
 TMultiStack<T>::~TMultiStack()
 {
-	if (stacks != 0)
+	size = 0;
+	count = 0;
+	if (x != 0)
 	{
+		delete[] x;
 		delete[] stacks;
+		x = 0;
 	}
 }
 
@@ -82,42 +160,44 @@ inline TMultiStack<T>& TMultiStack<T>::operator=(TMultiStack<T>& _v)
 	if (this == &_v)
 		return *this;
 
-	if (stacks != 0)
+	if (x != 0)
 	{
+		delete[] x;
 		delete[] stacks;
 	}
 
-	this->size = _v.size;
-	this->stackCount = _v.stackCount;
+	size = _v.size;
+	count = _v.count;
 
-	this->stacks = new TStack<T>[stackCount];
-	for (int i = 0; i < stackCount; i++)
-	{
+	stacks = new TStack<T>[count];
+	x = new T[size];
+
+	for (int i = 0; i < size; i++)
+		x[i] = _v.x[i];
+
+	for (int i = 0; i < count; i++)
 		stacks[i] = _v.stacks[i];
-	}
 
 	return *this;
 }
 
 template<class T>
-void TMultiStack<T>::Push(T d, int n)
+void TMultiStack<T>::Push(T d, int i)
 {
-	if (n < 0 || n >= stackCount) throw - 1;
-	if (stacks[n].IsFull())
-	{
-		int free_cells = get_free_cells();
-		if (free_cells > 0)
-			reallocate(free_cells, n);
-		else
-			throw - 1;
-	}
-	stacks[n].Push(d);
+	if (i < 0 || i >= count)
+		throw - 1;
+
+	if (stacks[i].IsFull())
+		StackRelocation(i);
+
+	stacks[i].Push(d);
 }
 
 template<class T>
 T TMultiStack<T>::Pop(int i)
 {
-	if (i < 0 || i >= stackCount) throw - 1;
+	if (i < 0 || i >= count)
+		throw - 1;
 	return stacks[i].Pop();
 }
 
@@ -125,13 +205,15 @@ template<class T>
 inline bool TMultiStack<T>::IsEmpty(int i) const
 {
 
-	if ((i < 0) || (i >= stackCount)) throw logic_error("invalid_size");
+	if ((i < 0) || (i >= count))
+		throw logic_error("invalid_size");
 	return stacks[i].IsEmpty();
 }
 
 template<class T>
 inline bool TMultiStack<T>::IsFull(int i) const
 {
-	if ((i < 0) || (i >= stackCount)) throw logic_error("invalid_size");
+	if ((i < 0) || (i >= count))
+		throw logic_error("invalid_size");
 	return stacks[i].IsFull();
 }
