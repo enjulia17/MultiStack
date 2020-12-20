@@ -14,6 +14,12 @@ protected:
 
 	void StackRelocation(int index);
 
+	int free_cells();
+	void to_left(int i, T** newX, int* sizes);
+	void to_right(int i, int k, T** newX, int* sizes);
+
+	void shift_data(int* sizes);
+
 public:
 	TMultiStack(int size = 1, int count = 1);
 	TMultiStack(TMultiStack<T>& _v);
@@ -34,17 +40,19 @@ public:
 			ostr << A.stacks[i] << endl;
 		return ostr;
 	}
+
+	//extra
+
+	void change_size(int K, int M, int n);
 };
 
 template<class T>
 inline void TMultiStack<T>::StackRelocation(int index)
 {
-	int freeSize = 0;
-	for (int i = 0; i < count; i++)
-		freeSize += stacks[i].GetSize() - stacks[i].GetCount();
+	int freeSize = free_cells();
 
 	if (freeSize == 0)
-		throw - 2;
+		throw length_error("error");
 
 	int for_each = freeSize / count;
 	int* sizes = new int[count];
@@ -52,6 +60,47 @@ inline void TMultiStack<T>::StackRelocation(int index)
 		sizes[i] = stacks[i].GetCount() + for_each;
 	sizes[count - 1] = stacks[count - 1].GetCount() + freeSize - for_each * (count - 1);
 
+	shift_data(sizes);
+}
+
+template<class T>
+inline int TMultiStack<T>::free_cells()
+{
+	int freeSize = 0;
+	for (int i = 0; i < count; i++)
+		freeSize += stacks[i].GetSize() - stacks[i].GetCount();
+	return freeSize;
+}
+
+template<class T>
+inline void TMultiStack<T>::to_left(int i, T** newX, int* sizes)
+{
+	for (int j = 0; j < stacks[i].GetCount(); j++)
+		newX[i][j] = oldX[i][j];
+	stacks[i].SetData(newX[i], sizes[i], stacks[i].GetCount());
+}
+
+template<class T>
+inline void TMultiStack<T>::to_right(int i, int k, T** newX, int* sizes)
+{
+	for (k = i; k < count; k++)
+		if (newX[k] > oldX[k])
+			continue;
+		else
+			break;
+	k--;
+
+	for (int s = k; s >= i; s--)
+	{
+		for (int j = stacks[s].GetCount() - 1; j >= 0; j--)
+			newX[s][j] = oldX[s][j];
+		stacks[s].SetData(newX[s], sizes[s], stacks[s].GetCount());
+	}
+}
+
+template<class T>
+inline void TMultiStack<T>::shift_data(int* sizes)
+{
 	T** newX = new T *[count];
 	int k = 0;
 	for (int i = 0; i < count; i++)
@@ -65,27 +114,9 @@ inline void TMultiStack<T>::StackRelocation(int index)
 		if (newX[i] == oldX[i])
 			stacks[i].SetData(newX[i], sizes[i], stacks[i].GetCount());
 		else if (newX[i] < oldX[i])
-		{
-			for (int j = 0; j < stacks[i].GetCount(); j++)
-				newX[i][j] = oldX[i][j];
-			stacks[i].SetData(newX[i], sizes[i], stacks[i].GetCount());
-		}
+			to_left(i, newX, sizes);
 		else if (newX[i] > oldX[i])
-		{
-			for (k = i; k < count; k++)
-				if (newX[k] > oldX[k])
-					continue;
-				else
-					break;
-			k--;
-
-			for (int s = k; s >= i; s--)
-			{
-				for (int j = stacks[s].GetCount() - 1; j >= 0; j--)
-					newX[s][j] = oldX[s][j];
-				stacks[s].SetData(newX[s], sizes[s], stacks[s].GetCount());
-			}
-		}
+			to_right(i, k, newX, sizes);
 
 	}
 
@@ -216,4 +247,32 @@ inline bool TMultiStack<T>::IsFull(int i) const
 	if ((i < 0) || (i >= count))
 		throw logic_error("invalid_size");
 	return stacks[i].IsFull();
+}
+
+template<class T>
+inline void TMultiStack<T>::change_size(int K, int M, int n)
+{
+	int mem_K = stacks[M].GetSize() * n;
+	int freeSize = free_cells();
+
+	if (freeSize < mem_K)
+		throw logic_error("not enough memory");
+
+	freeSize = freeSize - mem_K;
+
+	int for_each = freeSize / count;
+	int* sizes = new int[count];
+	for (int i = 0; i < count - 1; i++)
+	{
+		if (i == K)
+			sizes[i] = mem_K;
+		else
+			sizes[i] = stacks[i].GetCount() + for_each;
+	}
+	if (K == count - 1)
+		sizes[count - 1] = mem_K;
+	else
+		sizes[count - 1] = stacks[count - 1].GetCount() + freeSize - for_each * (count - 1);
+
+	shift_data(sizes);
 }

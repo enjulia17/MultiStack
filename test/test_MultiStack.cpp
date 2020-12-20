@@ -47,5 +47,19 @@ TEST(multistack, multisatck_is_empty)
 	ASSERT_ANY_THROW(B.Pop(2));
 }
 
+TEST(extra, change_sizes)
+{
+	TMultiStack<int> B(20, 4);
+	B.Push(1, 0);
+	B.Push(2, 0);
+	B.Push(3, 0);
+	B.Push(4, 0);
+	B.Push(3, 1);
+	B.Push(4, 1);
+	B.Push(3, 2);
+	B.Push(4, 3);
+
+	ASSERT_NO_THROW(B.change_size(0, 1, 2));
+}
 
 
